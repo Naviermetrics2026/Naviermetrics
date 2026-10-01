@@ -323,7 +323,7 @@ with st.sidebar:
 
     st.markdown("### Conectividad")
 
-    if st.button("🔌 Verificar Green-API", **ANCHO):
+    if st.button("🔌 Verificar Green-API"):
         st.session_state.api_status = obtener_estado_green_api()
 
     if st.session_state.api_status:
