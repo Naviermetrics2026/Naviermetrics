@@ -4,26 +4,18 @@ import pandas as pd
 import requests
 from datetime import datetime
 
-
-# ============================================================
-# CONFIGURACIÓN
-# ============================================================
+# ==========================================
+# CONFIGURACIÓN DE LA PÁGINA
+# ==========================================
 
 st.set_page_config(
-   "ChatGPT Image 1 oct 2026, 02_14_23 a.m..png"
-st.sidebar.image(nombre_logo, use_container_width=True)
-    page_title="Naviermetrics — Centro de Mando",
-    page_icon="🏗️",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="Naviermetrics - Centro de Mando",
+    layout="wide"
 )
 
-# Compatibilidad entre versiones de Streamlit (use_container_width fue retirado)
-if "width" in inspect.signature(st.button).parameters:
-    ANCHO = {"width": "stretch"}
-else:
-    ANCHO = {"use_container_width": True}
-
+# Colocación del logo en la parte superior izquierda de la barra lateral
+nombre_logo = "ChatGPT Image 1 oct 2026, 02_14_23 a.m..png"
+st.sidebar.image(nombre_logo, use_container_width=True)
 
 # ============================================================
 # ESTILOS
