@@ -421,7 +421,7 @@ activar_protocolo = st.checkbox("Activar protocolo de alerta y notificación")
 # EJECUTAR
 # ============================================================
 
-if st.button("🚨 EJECUTAR DETECCIÓN Y NOTIFICACIÓN", type="primary"):
+if st.button("🚨 EJECUTAR DETECCIÓN Y NOTIFICACIÓN",type="primary"):
 
     if not activar_protocolo:
 
