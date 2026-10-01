@@ -10,7 +10,7 @@ from datetime import datetime
 # ============================================================
 
 st.set_page_config(
-    page_title="NAVIER TECH — Centro de Mando",
+    page_title="Naviermetrics — Centro de Mando",
     page_icon="🏗️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -251,7 +251,7 @@ def construir_mensaje_alerta(incidente, dias, costo_diario, impacto_financiero):
     fecha = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
     mensaje = (
-        "🚨 NAVIER TECH — ALERTA DE OBRA\n\n"
+        "🚨 Naviermetrics — ALERTA DE OBRA\n\n"
         "Proyecto: Centro de Mando Inmobiliario\n\n"
         f"Fecha:\n{fecha}\n\n"
         f"INCIDENCIA DETECTADA:\n{incidente}\n\n"
@@ -259,7 +259,7 @@ def construir_mensaje_alerta(incidente, dias, costo_diario, impacto_financiero):
         f"Costo diario estimado:\nRD$ {costo_diario:,.2f}\n\n"
         f"IMPACTO FINANCIERO ESTIMADO:\nRD$ {impacto_financiero:,.2f}\n\n"
         "Estado:\n⚠️ Requiere revisión y validación.\n\n"
-        "Sistema:\nNAVIER TECH\nAnalítica inteligente para construcción.\n\n"
+        "Sistema:\nNaviermetrics\nAnalítica inteligente para construcción.\n\n"
         "Esta alerta corresponde a un evento detectado por el sistema y debe ser "
         "validada por el responsable autorizado antes de adoptar medidas "
         "contractuales o legales."
@@ -290,7 +290,7 @@ def registrar_alerta(incidente, dias, costo_diario, impacto, resultado_whatsapp)
 # HEADER
 # ============================================================
 
-st.markdown('<div class="main-title">NAVIER TECH</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">Naviermetrics</div>', unsafe_allow_html=True)
 
 st.markdown(
     '<div class="subtitle">Centro de Mando Inmobiliario y Legal — República Dominicana</div>',
@@ -360,7 +360,7 @@ st.markdown(
 st.video(VIDEO_URL)
 
 st.caption(
-    "Feed de video utilizado como demostración del sistema de analítica visual NAVIER TECH."
+    "Feed de video utilizado como demostración del sistema de analítica visual Naviermetrics."
 )
 
 
@@ -563,7 +563,7 @@ else:
 st.markdown("### 🔎 Trazabilidad y auditoría")
 
 st.write(
-    "NAVIER TECH registra el evento detectado, la fecha, duración estimada, "
+    "Naviermetrics registra el evento detectado, la fecha, duración estimada, "
     "impacto financiero y estado de la notificación. Los eventos detectados "
     "por el sistema deben ser revisados y validados por el responsable "
     "autorizado antes de adoptar decisiones contractuales, administrativas o legales."
@@ -578,7 +578,7 @@ with st.expander("ℹ️ Información técnica"):
 
     st.markdown(
         """
-**NAVIER TECH** — Plataforma demostrativa de monitoreo y analítica aplicada a proyectos de construcción.
+**Naviermetrics** — Plataforma demostrativa de monitoreo y analítica aplicada a proyectos de construcción.
 
 **Componentes:** Streamlit · Python · Green-API · YouTube · Pandas
 
@@ -611,7 +611,7 @@ if st.button("🔄 Reiniciar sesión", **ANCHO):
 st.markdown(
     """
     <div style="text-align:center; margin-top:30px;">
-    <small>NAVIER TECH — Construction Intelligence & Monitoring</small>
+    <small>Naviermetrics — Construction Intelligence & Monitoring</small>
     </div>
     """,
     unsafe_allow_html=True
