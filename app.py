@@ -588,7 +588,7 @@ Video → Analítica / detección → Incidencia → Evaluación → Registro �
 
 st.divider()
 
-if st.button("🔄 Reiniciar sesión", **ANCHO):
+if st.button("🔄 Reiniciar sesión"):
 
     st.session_state.alerta_disparada = False
     st.session_state.log_alertas = []
