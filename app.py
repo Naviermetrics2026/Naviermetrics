@@ -10,6 +10,9 @@ from datetime import datetime
 # ============================================================
 
 st.set_page_config(
+    # Cargar e incluir el logo en la esquina superior izquierda (sidebar)
+nombre_logo = "ChatGPT Image 1 oct 2026, 02_14_23 a.m..png"
+st.sidebar.image(nombre_logo, use_container_width=True)
     page_title="Naviermetrics — Centro de Mando",
     page_icon="🏗️",
     layout="wide",
