@@ -543,7 +543,7 @@ if st.session_state.log_alertas:
 
     df_alertas = pd.DataFrame(st.session_state.log_alertas)
 
-    st.dataframe(df_alertas, hide_index=True, **ANCHO)
+    st.dataframe(df_alertas, hide_index=True)
 
 else:
 
