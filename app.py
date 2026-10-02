@@ -1,84 +1,105 @@
-import inspect
 import streamlit as st
 import pandas as pd
 import requests
 from datetime import datetime
+import os
 
 # ==========================================
 # CONFIGURACIÓN DE LA PÁGINA
 # ==========================================
-
 st.set_page_config(
     page_title="Naviermetrics - Centro de Mando",
-    layout="wide"
+    page_icon="🏗️",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Colocación del logo en la parte superior izquierda de la barra lateral
-nombre_logo = "ChatGPT Image 1 oct 2026, 02_14_23 a.m..png"
-st.sidebar.image(nombre_logo, use_container_width=True)
-
-# ============================================================
-# ESTILOS
-# ============================================================
-
+# ==========================================
+# ESTILOS (Negro + Azules + Blanco)
+# ==========================================
 st.markdown("""
 <style>
-.main-title {
-    font-size: 38px;
-    font-weight: 800;
-    color: #1E3A8A;
-    margin-bottom: 0px;
-}
-.subtitle {
-    font-size: 17px;
-    color: #64748B;
-    margin-top: 0px;
-    margin-bottom: 25px;
-}
-.section-title {
-    font-size: 25px;
-    font-weight: 700;
-    margin-top: 20px;
-    margin-bottom: 10px;
-}
-.alert-box {
-    padding: 18px;
-    border-radius: 10px;
-    background-color: #FEF2F2;
-    border: 1px solid #FECACA;
-    color: #7F1D1D;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-.success-box {
-    padding: 18px;
-    border-radius: 10px;
-    background-color: #F0FDF4;
-    border: 1px solid #BBF7D0;
-    color: #14532D;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-.info-box {
-    padding: 18px;
-    border-radius: 10px;
-    background-color: #EFF6FF;
-    border: 1px solid #BFDBFE;
-    color: #1E3A8A;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-div[data-testid="stMetricValue"] {
-    font-size: 28px;
-}
+    .stApp {
+        background-color: #0B1120;
+        color: #E2E8F0;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #020617;
+        border-right: 1px solid #1E3A8A;
+    }
+    .main-title {
+        font-size: 42px;
+        font-weight: 800;
+        color: #60A5FA;
+        margin-bottom: 0px;
+    }
+    .subtitle {
+        font-size: 18px;
+        color: #94A3B8;
+        margin-top: 4px;
+        margin-bottom: 25px;
+    }
+    .section-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #93C5FD;
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+    .module-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #F1F5F9;
+        margin-top: 12px;
+        margin-bottom: 6px;
+    }
+    .module-desc {
+        font-size: 13px;
+        color: #94A3B8;
+        margin-bottom: 12px;
+    }
+    .stButton > button {
+        background: linear-gradient(90deg, #1E40AF, #3B82F6);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(90deg, #2563EB, #60A5FA);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
+    div[data-testid="stMetricValue"] {
+        color: #60A5FA;
+        font-size: 26px;
+    }
+    .success-box {
+        padding: 16px;
+        border-radius: 12px;
+        background-color: #052E16;
+        border: 1px solid #16A34A;
+        color: #BBF7D0;
+    }
+    .alert-box {
+        padding: 16px;
+        border-radius: 12px;
+        background-color: #450A0A;
+        border: 1px solid #DC2626;
+        color: #FECACA;
+    }
+    .info-box {
+        padding: 16px;
+        border-radius: 12px;
+        background-color: #0C1A3A;
+        border: 1px solid #1E40AF;
+        color: #BFDBFE;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-
-# ============================================================
+# ==========================================
 # GREEN-API
-# ============================================================
-
+# ==========================================
 def cargar_green_api():
     try:
         cfg = st.secrets["green_api"]
@@ -90,523 +111,276 @@ def cargar_green_api():
     except Exception:
         return None
 
-
 GREEN_API = cargar_green_api()
-
 VIDEO_URL = "https://www.youtube.com/watch?v=5_dFmyQN3TY"
-
-
-# ============================================================
-# SESSION STATE
-# ============================================================
-
-for clave, valor in {
-    "alerta_disparada": False,
-    "log_alertas": [],
-    "api_status": None,
-    "ultimo_resultado": None,
-}.items():
-    if clave not in st.session_state:
-        st.session_state[clave] = valor
-
-
-# ============================================================
-# ESTADO GREEN-API
-# ============================================================
+NUMERO_WHATSAPP = "18092728026"
 
 def obtener_estado_green_api():
-
     if GREEN_API is None:
-        return {
-            "ok": False,
-            "estado": "configuracion_no_encontrada",
-            "mensaje": "No se encontró la configuración de Green-API en st.secrets."
-        }
-
-    url = (
-        f"{GREEN_API['api_url']}"
-        f"/waInstance{GREEN_API['instance_id']}"
-        f"/getStateInstance/{GREEN_API['api_token']}"
-    )
-
+        return {"ok": False, "estado": "configuracion_no_encontrada", "mensaje": "No se encontró Green-API en secrets."}
+    url = f"{GREEN_API['api_url']}/waInstance{GREEN_API['instance_id']}/getStateInstance/{GREEN_API['api_token']}"
     try:
         response = requests.get(url, timeout=15)
-
-        try:
-            data = response.json()
-        except Exception:
-            data = {}
-
-        estado = data.get("stateInstance") if isinstance(data, dict) else None
-
+        data = response.json() if response.status_code == 200 else {}
+        estado = data.get("stateInstance")
         if response.status_code == 200:
-            return {
-                "ok": True,
-                "estado": estado,
-                "mensaje": f"Estado Green-API: {estado}"
-            }
-
-        return {
-            "ok": False,
-            "estado": estado,
-            "mensaje": f"Green-API respondió HTTP {response.status_code}: {response.text}"
-        }
-
-    except requests.exceptions.Timeout:
-        return {"ok": False, "estado": "timeout",
-                "mensaje": "Tiempo de espera agotado al conectar con Green-API."}
-
-    except requests.exceptions.ConnectionError:
-        return {"ok": False, "estado": "connection_error",
-                "mensaje": "No fue posible conectar con Green-API."}
-
+            return {"ok": True, "estado": estado, "mensaje": f"Estado: {estado}"}
+        return {"ok": False, "estado": estado, "mensaje": f"HTTP {response.status_code}"}
     except Exception as e:
-        return {"ok": False, "estado": "error",
-                "mensaje": f"Error inesperado: {str(e)}"}
-
-
-# ============================================================
-# ENVIAR WHATSAPP
-# ============================================================
+        return {"ok": False, "estado": "error", "mensaje": str(e)}
 
 def enviar_alerta_whatsapp(numero, mensaje):
-
     if GREEN_API is None:
-        return {"ok": False, "mensaje": "Green-API no está configurada."}
-
+        return {"ok": False, "mensaje": "Green-API no configurada."}
     numero_limpio = "".join(c for c in str(numero) if c.isdigit())
-
     if not numero_limpio:
-        return {"ok": False, "mensaje": "Número de WhatsApp inválido."}
-
+        return {"ok": False, "mensaje": "Número inválido."}
     estado = obtener_estado_green_api()
-
-    if not estado["ok"]:
+    if not estado["ok"] or estado["estado"] != "authorized":
         return {"ok": False, "mensaje": estado["mensaje"]}
-
-    if estado["estado"] != "authorized":
-        return {
-            "ok": False,
-            "mensaje": (
-                "La instancia Green-API no está autorizada. "
-                f"Estado actual: {estado['estado']}"
-            )
-        }
-
-    url = (
-        f"{GREEN_API['api_url']}"
-        f"/waInstance{GREEN_API['instance_id']}"
-        f"/sendMessage/{GREEN_API['api_token']}"
-    )
-
-    payload = {
-        "chatId": f"{numero_limpio}@c.us",
-        "message": mensaje
-    }
-
+    url = f"{GREEN_API['api_url']}/waInstance{GREEN_API['instance_id']}/sendMessage/{GREEN_API['api_token']}"
+    payload = {"chatId": f"{numero_limpio}@c.us", "message": mensaje}
     try:
-        response = requests.post(
-            url,
-            json=payload,
-            headers={"Content-Type": "application/json"},
-            timeout=20
-        )
-
-        try:
-            data = response.json()
-        except Exception:
-            data = {}
-
+        response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=20)
         if response.status_code == 200:
-            return {"ok": True, "mensaje": "Mensaje enviado correctamente.", "data": data}
-
-        return {
-            "ok": False,
-            "mensaje": f"Green-API respondió HTTP {response.status_code}: {response.text}",
-            "data": data
-        }
-
-    except requests.exceptions.Timeout:
-        return {"ok": False, "mensaje": "Timeout enviando el mensaje a WhatsApp."}
-
-    except requests.exceptions.ConnectionError:
-        return {"ok": False, "mensaje": "No se pudo conectar con Green-API."}
-
+            return {"ok": True, "mensaje": "Mensaje enviado correctamente.", "data": response.json()}
+        return {"ok": False, "mensaje": f"HTTP {response.status_code}: {response.text}"}
     except Exception as e:
-        return {"ok": False, "mensaje": f"Error enviando WhatsApp: {str(e)}"}
+        return {"ok": False, "mensaje": str(e)}
 
+# ==========================================
+# SESSION STATE
+# ==========================================
+if "pagina_actual" not in st.session_state:
+    st.session_state.pagina_actual = "home"
+if "api_status" not in st.session_state:
+    st.session_state.api_status = None
 
-# ============================================================
-# CONSTRUIR MENSAJE
-# ============================================================
-
-def construir_mensaje_alerta(incidente, dias, costo_diario, impacto_financiero):
-
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
-    mensaje = (
-        "🚨 Naviermetrics — ALERTA DE OBRA\n\n"
-        "Proyecto: Centro de Mando Inmobiliario\n\n"
-        f"Fecha:\n{fecha}\n\n"
-        f"INCIDENCIA DETECTADA:\n{incidente}\n\n"
-        f"Duración estimada:\n{dias} día(s)\n\n"
-        f"Costo diario estimado:\nRD$ {costo_diario:,.2f}\n\n"
-        f"IMPACTO FINANCIERO ESTIMADO:\nRD$ {impacto_financiero:,.2f}\n\n"
-        "Estado:\n⚠️ Requiere revisión y validación.\n\n"
-        "Sistema:\nNaviermetrics\nAnalítica inteligente para construcción.\n\n"
-        "Esta alerta corresponde a un evento detectado por el sistema y debe ser "
-        "validada por el responsable autorizado antes de adoptar medidas "
-        "contractuales o legales."
-    )
-
-    return mensaje
-
-
-# ============================================================
-# REGISTRAR ALERTA
-# ============================================================
-
-def registrar_alerta(incidente, dias, costo_diario, impacto, resultado_whatsapp):
-
-    registro = {
-        "Fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Incidencia": incidente,
-        "Días": dias,
-        "Costo diario": costo_diario,
-        "Impacto": impacto,
-        "WhatsApp": "ENVIADO" if resultado_whatsapp.get("ok") else "NO ENVIADO"
-    }
-
-    st.session_state.log_alertas.insert(0, registro)
-
-
-# ============================================================
-# HEADER
-# ============================================================
-
-st.markdown('<div class="main-title">Naviermetrics</div>', unsafe_allow_html=True)
-
-st.markdown(
-    '<div class="subtitle">Centro de Mando Inmobiliario y Legal — República Dominicana</div>',
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
+# ==========================================
 # SIDEBAR
-# ============================================================
-
+# ==========================================
 with st.sidebar:
+    logo_path = "ChatGPT Image 1 oct 2026, 02_14_23 a.m..png"
+    if os.path.exists(logo_path):
+        st.image(logo_path, use_container_width=True)
+    else:
+        st.markdown("### 🏗️ Naviermetrics")
 
-    st.header("⚙️ Configuración")
-
-    st.markdown("### WhatsApp")
-
-    numero_whatsapp = st.text_input(
-        "Número receptor",
-        value="18092728026",
-        help="Número completo con código de país, sin +, espacios ni guiones."
-    )
-
-    st.divider()
-
-    st.markdown("### Parámetros financieros")
-
-    costo_diario = st.number_input(
-        "Costo estimado por día (RD$)",
-        min_value=0.0,
-        value=4500.0,
-        step=500.0
-    )
-
-    st.divider()
-
-    st.markdown("### Conectividad")
+    st.markdown("---")
+    st.markdown("### ⚙️ Configuración")
+    st.markdown(f"**WhatsApp:** `{NUMERO_WHATSAPP}`")
 
     if st.button("🔌 Verificar Green-API"):
         st.session_state.api_status = obtener_estado_green_api()
 
     if st.session_state.api_status:
-
-        estado_api = st.session_state.api_status
-
-        if estado_api["ok"]:
-            if estado_api["estado"] == "authorized":
-                st.success("GREEN-API AUTORIZADA")
-            else:
-                st.warning(f"Estado: {estado_api['estado']}")
+        if st.session_state.api_status["ok"] and st.session_state.api_status["estado"] == "authorized":
+            st.success("GREEN-API AUTORIZADA")
         else:
-            st.error(estado_api["mensaje"])
-
-    else:
-        st.info("Presiona 'Verificar Green-API' para comprobar la conexión.")
-
-
-# ============================================================
-# VIDEO
-# ============================================================
-
-st.markdown(
-    '<div class="section-title">📹 Monitoreo en Vivo e Ingesta Analítica</div>',
-    unsafe_allow_html=True
-)
-
-st.video(VIDEO_URL)
-
-st.caption(
-    "Feed de video utilizado como demostración del sistema de analítica visual Naviermetrics."
-)
-
-
-# ============================================================
-# DETECCIÓN
-# ============================================================
-
-st.divider()
-
-st.markdown(
-    '<div class="section-title">🚨 Motor de Detección de Incidencias</div>',
-    unsafe_allow_html=True
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    incidente = st.selectbox(
-        "Tipo de incidencia detectada",
-        [
-            "Ingreso no autorizado",
-            "Actividad fuera de horario",
-            "Ausencia de personal",
-            "Riesgo de seguridad",
-            "Interrupción de actividad",
-            "Acumulación de materiales",
-            "Vehículo no autorizado",
-            "Incidencia contractual"
-        ]
-    )
-
-with col2:
-    dias = st.slider(
-        "Duración estimada de la incidencia",
-        min_value=1,
-        max_value=30,
-        value=3
-    )
-
-
-# ============================================================
-# IMPACTO FINANCIERO
-# ============================================================
-
-impacto_financiero = costo_diario * dias
-
-st.markdown(
-    '<div class="info-box"><b>Impacto financiero estimado</b><br>'
-    f'RD$ {impacto_financiero:,.2f}</div>',
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
-# PROTOCOLO
-# ============================================================
-
-st.markdown("### ⚖️ Protocolo de validación")
-
-activar_protocolo = st.checkbox("Activar protocolo de alerta y notificación")
-
-
-# ============================================================
-# EJECUTAR
-# ============================================================
-
-if st.button("🚨 EJECUTAR DETECCIÓN Y NOTIFICACIÓN",type="primary"):
-
-    if not activar_protocolo:
-
-        st.warning(
-            "Debes activar el protocolo de alerta antes de ejecutar la notificación."
-        )
-
-    elif not numero_whatsapp.strip():
-
-        st.error("Debes introducir un número de WhatsApp.")
-
-    else:
-
-        mensaje_alerta = construir_mensaje_alerta(
-            incidente=incidente,
-            dias=dias,
-            costo_diario=costo_diario,
-            impacto_financiero=impacto_financiero
-        )
-
-        with st.spinner("Enviando notificación..."):
-            resultado = enviar_alerta_whatsapp(
-                numero=numero_whatsapp,
-                mensaje=mensaje_alerta
-            )
-
-        st.session_state.alerta_disparada = True
-        st.session_state.ultimo_resultado = resultado
-
-        registrar_alerta(
-            incidente=incidente,
-            dias=dias,
-            costo_diario=costo_diario,
-            impacto=impacto_financiero,
-            resultado_whatsapp=resultado
-        )
-
-        if resultado["ok"]:
-
-            st.markdown(
-                '<div class="success-box"><b>✓ ALERTA EJECUTADA</b><br>'
-                'La incidencia fue registrada y la notificación fue enviada por WhatsApp.</div>',
-                unsafe_allow_html=True
-            )
-            st.success(resultado["mensaje"])
-
-        else:
-
-            st.markdown(
-                '<div class="alert-box"><b>⚠️ ALERTA REGISTRADA — WHATSAPP NO ENVIADO</b><br>'
-                'La incidencia fue procesada, pero la notificación no pudo ser enviada.</div>',
-                unsafe_allow_html=True
-            )
-            st.error(resultado["mensaje"])
-
-
-# ============================================================
-# RESULTADO DE COMUNICACIÓN
-# ============================================================
-
-if st.session_state.ultimo_resultado:
-
-    st.markdown("### 📡 Resultado de comunicación")
-
-    ultimo = st.session_state.ultimo_resultado
-
-    if ultimo.get("ok"):
-
-        st.success("WhatsApp: mensaje enviado correctamente.")
-
-        if ultimo.get("data"):
-            with st.expander("Ver respuesta de Green-API"):
-                st.json(ultimo["data"])
-
-    else:
-        st.warning("WhatsApp: no se pudo completar el envío.")
-
-
-# ============================================================
-# DASHBOARD
-# ============================================================
-
-st.divider()
-
-st.markdown(
-    '<div class="section-title">📊 Dashboard de Control</div>',
-    unsafe_allow_html=True
-)
-
-total_alertas = len(st.session_state.log_alertas)
-
-total_impacto = sum(r["Impacto"] for r in st.session_state.log_alertas)
-
-c1, c2, c3, c4 = st.columns(4)
-
-with c1:
-    st.metric("Alertas generadas", total_alertas)
-
-with c2:
-    st.metric("Impacto acumulado", f"RD$ {total_impacto:,.0f}")
-
-with c3:
-    st.metric("Índice de certeza", "94%")
-
-with c4:
-    st.metric(
-        "Sistema",
-        "ACTIVO" if st.session_state.alerta_disparada else "MONITOREANDO"
-    )
-
-
-# ============================================================
-# TABLA
-# ============================================================
-
-if st.session_state.log_alertas:
-
-    st.markdown("### 📋 Registro de incidencias")
-
-    df_alertas = pd.DataFrame(st.session_state.log_alertas)
-
-    st.dataframe(df_alertas, hide_index=True)
-
+            st.warning(st.session_state.api_status["mensaje"])
+
+    st.markdown("---")
+    if st.button("🏠 Volver al Inicio"):
+        st.session_state.pagina_actual = "home"
+        st.rerun()
+
+# ==========================================
+# PÁGINA HOME
+# ==========================================
+if st.session_state.pagina_actual == "home":
+
+    st.markdown('<div class="main-title">Naviermetrics</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Centro de Mando Integral para Proyectos de Construcción — RD · PR · Panamá</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="section-title">📹 Monitoreo en Vivo e Ingesta Analítica</div>', unsafe_allow_html=True)
+    st.video(VIDEO_URL)
+    st.caption("Feed de demostración. Aquí irá Digifort cuando tengas la licencia.")
+
+    st.markdown("---")
+    st.markdown('<div class="section-title">🚀 Módulos del Centro de Mando</div>', unsafe_allow_html=True)
+
+    modulos = [
+        {"id": "overview", "titulo": "Dashboard Principal", "desc": "KPIs globales, avance y alertas críticas", "img": "images/01_overview.png"},
+        {"id": "monitoreo", "titulo": "Monitoreo Visual", "desc": "Cámaras, analytics y evidencias Digifort", "img": "images/02_monitoreo.png"},
+        {"id": "financiero", "titulo": "Módulo Financiero", "desc": "Presupuesto, flujo de caja y gastos", "img": "images/03_financiero.png"},
+        {"id": "contratistas", "titulo": "Contratistas", "desc": "Control de proveedores y desempeño", "img": "images/04_contratistas.png"},
+        {"id": "legal", "titulo": "Legal & Cumplimiento", "desc": "Leyes RD/PR/Panamá + alertas legales", "img": "images/05_legal.png"},
+        {"id": "comercial", "titulo": "Comercial / Avances", "desc": "Reportes visuales para stakeholders", "img": "images/06_comercial.png"},
+        {"id": "materiales", "titulo": "Control de Materiales", "desc": "Inventario y consumo en obra", "img": "images/07_materiales.png"},
+        {"id": "talento", "titulo": "Talento Humano", "desc": "Asistencia, evaluaciones y contratos", "img": "images/08_talento.png"},
+        {"id": "reportes", "titulo": "Reportes PDF", "desc": "Informes profesionales descargables", "img": "images/09_reportes.png"},
+        {"id": "contratos", "titulo": "Plantillas de Contratos", "desc": "Trabajo vs Prestación de Servicios", "img": "images/10_contratos.png"},
+    ]
+
+    for i in range(0, len(modulos), 5):
+        cols = st.columns(5)
+        for j, col in enumerate(cols):
+            if i + j < len(modulos):
+                m = modulos[i + j]
+                with col:
+                    if os.path.exists(m["img"]):
+                        st.image(m["img"], use_container_width=True)
+                    else:
+                        st.markdown(f"<div style='height:140px;background:#1E293B;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#64748B;'>Imagen</div>", unsafe_allow_html=True)
+                    
+                    st.markdown(f"<div class='module-title'>{m['titulo']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='module-desc'>{m['desc']}</div>", unsafe_allow_html=True)
+                    
+                    if st.button("Entrar →", key=f"btn_{m['id']}", use_container_width=True):
+                        st.session_state.pagina_actual = m["id"]
+                        st.rerun()
+
+# ==========================================
+# MÓDULOS
+# ==========================================
 else:
+    pagina = st.session_state.pagina_actual
 
-    st.info("No existen incidencias registradas durante esta sesión.")
+    if st.button("← Volver al Inicio"):
+        st.session_state.pagina_actual = "home"
+        st.rerun()
 
+    st.markdown("---")
 
-# ============================================================
-# AUDITORÍA
-# ============================================================
+    # -------------------- LEGAL --------------------
+    if pagina == "legal":
+        st.markdown('<div class="main-title">Legal & Cumplimiento</div>', unsafe_allow_html=True)
+        st.markdown('<div class="subtitle">Leyes de Construcción y Conexas — RD · PR · Panamá</div>', unsafe_allow_html=True)
 
-st.markdown("### 🔎 Trazabilidad y auditoría")
+        leyes = {
+            "DO": [
+                {"codigo": "Ley 160-21", "nombre": "Ministerio de Vivienda, Hábitat y Edificaciones (MIVED)", "categoria": "Institucional", "riesgo": "Alto", "resumen": "Crea el MIVED y establece el marco rector de vivienda y edificaciones en RD."},
+                {"codigo": "Código de Construcción RD", "nombre": "Código de Construcción de la República Dominicana", "categoria": "Código Técnico", "riesgo": "Crítico", "resumen": "Requisitos mínimos de diseño, seguridad estructural, sismo y habitabilidad."},
+                {"codigo": "Ley 687-82", "nombre": "Reglamentación Técnica de Ingeniería y Arquitectura", "categoria": "Técnico", "riesgo": "Alto", "resumen": "Sistema de reglamentos técnicos para proyectos de ingeniería y arquitectura."},
+                {"codigo": "Ley 16-92", "nombre": "Código de Trabajo", "categoria": "Laboral", "riesgo": "Alto", "resumen": "Regula relaciones laborales, jornadas, despidos y derechos de los trabajadores."},
+                {"codigo": "Ley 64-00", "nombre": "Ley General sobre Medio Ambiente y Recursos Naturales", "categoria": "Ambiental", "riesgo": "Alto", "resumen": "Obligaciones ambientales, estudios de impacto y permisos."},
+                {"codigo": "Ley 87-01", "nombre": "Sistema Dominicano de Seguridad Social", "categoria": "Laboral/SS", "riesgo": "Medio", "resumen": "Aportes obligatorios a la Seguridad Social."},
+            ],
+            "PR": [
+                {"codigo": "PRBC 2018", "nombre": "Puerto Rico Building Code 2018 (Act 109-2018)", "categoria": "Código Técnico", "riesgo": "Crítico", "resumen": "Código de construcción basado en IBC 2018. Incluye requisitos sísmicos y de huracanes."},
+                {"codigo": "Ley 161-2009", "nombre": "Reforma del Proceso de Permisos (OGPe)", "categoria": "Permisos", "riesgo": "Crítico", "resumen": "Crea la Oficina de Gerencia de Permisos y unifica trámites de construcción."},
+                {"codigo": "Ley 16-1975", "nombre": "Ley de Seguridad y Salud en el Trabajo (PROSHA)", "categoria": "Seguridad", "riesgo": "Crítico", "resumen": "Normas de seguridad ocupacional equivalentes o superiores a OSHA federal."},
+                {"codigo": "Ley 416-2004", "nombre": "Ley de Política Pública Ambiental", "categoria": "Ambiental", "riesgo": "Alto", "resumen": "Marco ambiental de Puerto Rico + requisitos EPA (NPDES, etc.)."},
+                {"codigo": "Ley 80-1976", "nombre": "Ley de Despido Injustificado", "categoria": "Laboral", "riesgo": "Alto", "resumen": "Protección contra despidos sin justa causa e indemnizaciones."},
+                {"codigo": "Ley 379-1948", "nombre": "Jornada de Trabajo y Horas Extras", "categoria": "Laboral", "riesgo": "Medio", "resumen": "Jornada diaria de 8 horas; extras a partir de la 9ª hora del día."},
+            ],
+            "PA": [
+                {"codigo": "Ley 67-2015", "nombre": "Medidas de Seguridad en la Industria de la Construcción", "categoria": "Seguridad", "riesgo": "Crítico", "resumen": "Obliga a designar Oficial(es) de Seguridad Ocupacional según monto y riesgo de la obra."},
+                {"codigo": "Decreto 2-2008", "nombre": "Seguridad, Salud e Higiene en la Construcción", "categoria": "Seguridad", "riesgo": "Crítico", "resumen": "Reglamento detallado de seguridad en obras de construcción."},
+                {"codigo": "Acuerdo 281/2016 + 110/2025", "nombre": "Permisos de Construcción (DOYC)", "categoria": "Permisos", "riesgo": "Crítico", "resumen": "Proceso de permisos de construcción en el Distrito de Panamá. Vigencia 5 años."},
+                {"codigo": "Ley 15-1959", "nombre": "Ejercicio de Ingeniería y Arquitectura (JTIA)", "categoria": "Profesional", "riesgo": "Alto", "resumen": "Regula el ejercicio profesional y crea la Junta Técnica de Ingeniería y Arquitectura."},
+                {"codigo": "Ley 226-2021", "nombre": "Normas de Diseño y Edificación", "categoria": "Código Técnico", "riesgo": "Alto", "resumen": "Marco general de normas de diseño y edificación en Panamá."},
+                {"codigo": "Código de Trabajo", "nombre": "Código de Trabajo de Panamá (disposiciones de construcción)", "categoria": "Laboral", "riesgo": "Alto", "resumen": "Normas laborales especiales para la actividad de construcción."},
+            ]
+        }
 
-st.write(
-    "Naviermetrics registra el evento detectado, la fecha, duración estimada, "
-    "impacto financiero y estado de la notificación. Los eventos detectados "
-    "por el sistema deben ser revisados y validados por el responsable "
-    "autorizado antes de adoptar decisiones contractuales, administrativas o legales."
-)
+        pais = st.selectbox("Selecciona el país", ["República Dominicana", "Puerto Rico", "Panamá"])
+        codigo_pais = {"República Dominicana": "DO", "Puerto Rico": "PR", "Panamá": "PA"}[pais]
 
+        st.markdown(f"### Leyes vigentes en **{pais}**")
 
-# ============================================================
-# INFORMACIÓN TÉCNICA
-# ============================================================
+        for ley in leyes[codigo_pais]:
+            color = {"Crítico": "#DC2626", "Alto": "#F59E0B", "Medio": "#3B82F6"}.get(ley["riesgo"], "#94A3B8")
+            with st.expander(f"**{ley['codigo']}** — {ley['nombre']}  |  Riesgo: {ley['riesgo']}"):
+                st.markdown(f"**Categoría:** {ley['categoria']}")
+                st.markdown(f"**Resumen:** {ley['resumen']}")
+                st.markdown(f"<span style='color:{color}; font-weight:700;'>Nivel de riesgo: {ley['riesgo']}</span>", unsafe_allow_html=True)
 
-with st.expander("ℹ️ Información técnica"):
+        st.markdown("---")
+        st.markdown("### 🚨 Generar Alerta Legal")
 
-    st.markdown(
-        """
-**Naviermetrics** — Plataforma demostrativa de monitoreo y analítica aplicada a proyectos de construcción.
+        col1, col2 = st.columns(2)
+        with col1:
+            tipo_alerta = st.selectbox("Tipo de alerta", [
+                "Vencimiento de permiso de construcción",
+                "Falta de Oficial de Seguridad",
+                "Incumplimiento de jornada laboral",
+                "Ausencia de EPP detectada",
+                "Vencimiento de póliza / fianza",
+                "Requisito ambiental pendiente"
+            ])
+        with col2:
+            dias = st.number_input("Días restantes / impacto", min_value=0, value=7)
 
-**Componentes:** Streamlit · Python · Green-API · YouTube · Pandas
+        if st.button("Enviar Alerta Legal por WhatsApp", type="primary"):
+            mensaje = (
+                f"⚖️ *Naviermetrics — ALERTA LEGAL*\n\n"
+                f"País: {pais}\n"
+                f"Tipo: {tipo_alerta}\n"
+                f"Días / impacto: {dias}\n\n"
+                f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n\n"
+                f"Se requiere revisión inmediata del abogado del proyecto.\n"
+                f"Sistema: Naviermetrics Legal Module"
+            )
+            resultado = enviar_alerta_whatsapp(NUMERO_WHATSAPP, mensaje)
+            if resultado["ok"]:
+                st.markdown('<div class="success-box"><b>✓ Alerta legal enviada por WhatsApp</b></div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div class="alert-box"><b>Error:</b> {resultado["mensaje"]}</div>', unsafe_allow_html=True)
 
-**Flujo:**
-Video → Analítica / detección → Incidencia → Evaluación → Registro → Notificación WhatsApp → Validación humana
-        """
-    )
+    # -------------------- CONTRATOS --------------------
+    elif pagina == "contratos":
+        st.markdown('<div class="main-title">Plantillas de Contratos</div>', unsafe_allow_html=True)
+        st.markdown('<div class="subtitle">Contrato de Trabajo vs Contrato de Prestación de Servicios</div>', unsafe_allow_html=True)
 
+        tipo_contrato = st.radio(
+            "Tipo de contrato",
+            ["Contrato de Trabajo (relación de dependencia)", "Contrato de Prestación de Servicios (independiente)"],
+            horizontal=True
+        )
 
-# ============================================================
-# REINICIAR
-# ============================================================
+        pais_contrato = st.selectbox("País del contrato", ["República Dominicana", "Puerto Rico", "Panamá"])
 
-st.divider()
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            nombre = st.text_input("Nombre completo")
+            cedula = st.text_input("Cédula / ID")
+            cargo = st.text_input("Cargo o servicio", value="Oficial de Seguridad")
+        with col2:
+            fecha_inicio = st.date_input("Fecha de inicio")
+            fecha_fin = st.date_input("Fecha de terminación (opcional)")
+            salario = st.number_input("Salario / Honorarios", min_value=0.0, value=25000.0, step=1000.0)
 
-if st.button("🔄 Reiniciar sesión"):
+        if st.button("Generar Plantilla", type="primary"):
+            if "Trabajo" in tipo_contrato:
+                plantilla = f"""
+CONTRATO DE TRABAJO
 
-    st.session_state.alerta_disparada = False
-    st.session_state.log_alertas = []
-    st.session_state.api_status = None
-    st.session_state.ultimo_resultado = None
+Entre [EMPRESA] y {nombre} (Cédula/ID: {cedula})
 
-    st.rerun()
+1. Objeto: Prestación de servicios como {cargo} bajo subordinación.
+2. País: {pais_contrato}
+3. Remuneración: {salario:,.2f}
+4. Inicio: {fecha_inicio.strftime('%d/%m/%Y')}
+5. Terminación: Se regirá por el Código de Trabajo de {pais_contrato}.
+6. Seguridad Social: Aportes obligatorios a cargo de la empresa.
 
+Firmas:
+_________________________          _________________________
+Empresa                            Trabajador
+"""
+            else:
+                plantilla = f"""
+CONTRATO DE PRESTACIÓN DE SERVICIOS
 
-# ============================================================
-# FOOTER
-# ============================================================
+Entre [EMPRESA] y {nombre} (Cédula/ID: {cedula})
 
-st.markdown(
-    """
-    <div style="text-align:center; margin-top:30px;">
-    <small>Naviermetrics — Construction Intelligence & Monitoring</small>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+1. Objeto: Servicios independientes de {cargo} (sin subordinación).
+2. País: {pais_contrato}
+3. Honorarios: {salario:,.2f} (contra factura)
+4. Inicio: {fecha_inicio.strftime('%d/%m/%Y')}
+5. Este contrato NO genera relación laboral ni derecho a prestaciones.
+6. El Prestador es responsable de su propia seguridad y herramientas.
+
+Firmas:
+_________________________          _________________________
+Empresa                            Prestador
+"""
+            st.code(plantilla)
+            st.download_button("📥 Descargar plantilla", plantilla, file_name="contrato.txt")
+
+    # -------------------- OTROS MÓDULOS --------------------
+    else:
+        st.markdown(f'<div class="main-title">{pagina.upper()}</div>', unsafe_allow_html=True)
+        st.info(f"El módulo **{pagina}** está en construcción.")
